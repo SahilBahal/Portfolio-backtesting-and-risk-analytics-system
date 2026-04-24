@@ -1,0 +1,12 @@
+.DS_Store
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+*.o
+*.out
+*.dSYM/
+.vscode/
+.idea/
+
