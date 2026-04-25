@@ -1,6 +1,6 @@
 # Final Project Topic Proposal
 
-**Group Members:** Manuel Bossi, Roberto Rodriguez
+**Group Members:** Manuel Bossi, Roberto Rodriguez, Sahil Bahal
 
 **Topic:** Portfolio Rebalancing Backtester and Risk Analyzer
 
