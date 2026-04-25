@@ -2,9 +2,9 @@
 
 Portfolio Rebalancing Backtester and Risk Analyzer.
 
-Group members: Manuel Bossi, Roberto Rodriguez.
+Group members: Manuel Bossi, Roberto Rodriguez, Sahil Bahal
 
-This repository is for the FE 522 C++ final project. The planned program is a C++17 backtester that reads historical adjusted close prices for a small group of assets, compares buy-and-hold against scheduled portfolio rebalancing, and reports return and risk metrics.
+This repository is for the FE522 C++ final project. The planned program is a C++17 backtester that reads historical adjusted close prices for a small group of assets, compares buy-and-hold against scheduled portfolio rebalancing, and reports return and risk metrics.
 
 ## Planned Scope
 
