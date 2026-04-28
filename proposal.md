@@ -1,23 +1,55 @@
-# Final Project Topic Proposal
+# FE522 Final Project Proposal
 
-**Group Members:** Manuel Bossi, Roberto Rodriguez, Sahil Bahal
+## Group Members
+- Roberto Rodriguez
+- Manuel Bossi
+- Sahil Bahal
 
-**Topic:** Portfolio Rebalancing Backtester and Risk Analyzer
+## Topic
+Portfolio Optimization, Backtesting, Risk, and Simulation System
 
-**Summary:**
-We build a C++ program that reads historical price data for a small group of assets and simulates how a portfolio would perform over time. The program will compare a buy-and-hold portfolio against a simple rebalancing strategy, such as monthly rebalancing back to fixed target weights. It will report final value, total return, volatility, Sharpe ratio, maximum drawdown, and a log of the rebalancing trades.
+## Summary
+This project builds a modular C++ portfolio management system for testing and comparing investment strategies over historical market data. The system simulates portfolio performance across buy-and-hold, fixed monthly rebalancing, macro-aware allocation, and optimized minimum-variance allocation. It evaluates each strategy using performance metrics, risk analytics, deterministic stress tests, and Monte Carlo simulation.
 
-**Scope:**
-The project will be written entirely in C++ and organized into multiple source files with a CMake build. The main technical components will include:
+Python is used only as a support layer for generating input data and plotting output results. The core portfolio accounting, strategy execution, optimization, risk metrics, stress testing, and Monte Carlo simulation are implemented in C++.
 
-- **CSV data import:** Read date and adjusted close price data for 2-4 assets from CSV files.
-- **Price and return storage:** Store price histories and calculate daily asset returns.
-- **Portfolio model:** Track holdings, cash, target weights, daily portfolio value, and realized rebalancing trades.
-- **Backtest engine:** Step through the historical dates, update portfolio value, trigger scheduled rebalancing, and record the equity curve.
-- **Strategy logic:** Implement at least two strategies: buy-and-hold and fixed-weight monthly rebalancing.
-- **Risk metrics:** Compute total return, annualized return, volatility, Sharpe ratio, maximum drawdown, and turnover.
-- **Output/reporting:** Print formatted summary tables and write CSV output files for the portfolio equity curve and rebalance log.
+## Scope
 
-The planned class structure will include components such as `CsvReader`, `PriceTable`, `Portfolio`, `RebalanceStrategy`, `BacktestEngine`, `RiskMetrics`, and `ReportPrinter`.
+### 1. Backtesting and Portfolio Engine
+- `BacktestEngine` simulates portfolio evolution through time.
+- `Portfolio` tracks cash, holdings, trades, transaction costs, equity curve, and final weights.
+- Uses the Strategy Pattern through `RebalanceStrategy`.
+- Base strategies include buy-and-hold and fixed monthly rebalancing.
 
-If time allows, we may add transaction costs or a small Python wrapper for plotting results, but the core project will compile and run as a standalone C++17 program.
+### 2. Strategy Layer
+- Buy-and-hold strategy.
+- Fixed monthly rebalancing strategy.
+- Macro-aware tactical allocation strategy.
+- Optimized monthly rebalancing strategy using C++ optimization output.
+
+### 3. Optimization and Allocation Layer
+- `OptimizationEngine` computes portfolio weights using trailing historical data.
+- Implements inverse-volatility allocation.
+- Implements long-only minimum-variance allocation.
+- Generates efficient-frontier candidate portfolios.
+- Applies constraints such as long-only weights and maximum asset limits.
+
+### 4. Risk and Simulation Layer
+- `RiskMetrics` computes total return, annualized return, volatility, Sharpe ratio, maximum drawdown, VaR, CVaR, and rolling volatility.
+- Monte Carlo simulation estimates future portfolio outcome distributions.
+- Stress testing evaluates strategies under equity shock, rate shock, Bitcoin crash, and inflation shock scenarios.
+
+### 5. Output and Reporting
+- C++ writes CSV outputs for equity curves, trades, metrics, optimization logs, stress tests, and Monte Carlo results.
+- Python plotting wrapper visualizes equity curves, Monte Carlo bands, macro regimes, efficient frontier, and stress tests.
+
+## Team Split
+
+| Member | Main Responsibility |
+| --- | --- |
+| Manuel Bossi | Backtest engine, portfolio accounting, base strategies, Strategy Pattern integration |
+| Roberto Rodriguez | Optimization engine, allocation logic, efficient frontier, optimized strategy |
+| Sahil Bahal | Risk metrics, Monte Carlo simulation, stress testing, reporting, visualization |
+
+## Goal
+Build a complete C++ portfolio system that combines backtesting, optimization, risk management, stress testing, and simulation to evaluate investment strategies in a realistic multi-asset setting.
