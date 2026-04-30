@@ -1,5 +1,5 @@
 """
-FE522 data downloader for Manuel's backtesting module.
+FE522 data downloader for the backtesting module.
 
 This file is intentionally Python, not C++.
 Python is only used as a support layer to create clean input data.

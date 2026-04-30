@@ -1,12 +1,12 @@
-# Manuel Bossi - Backtesting and Portfolio Engine
+# Backtesting Module
 
-Manuel owns the core simulation layer of the project.
+This module contains the core simulation layer of the project.
 
 ## Main Responsibility
 
 This module provides the reusable C++ engine that steps through historical prices, tracks portfolio accounting, and runs portfolio strategies through the Strategy Pattern.
 
-## Files Owned by Manuel
+## Main Files
 
 | File | Purpose |
 | --- | --- |

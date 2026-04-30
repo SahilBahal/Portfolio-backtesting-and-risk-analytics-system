@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-// Small shared dependency used by Manuel's backtest engine.
+// Small shared dependency used by the backtest engine.
 // It stores already-cleaned historical prices in a simple date-by-date table:
 // rows are dates, columns are assets, and each cell is a price.
 // The public methods below let other components read the data safely.

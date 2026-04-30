@@ -1,6 +1,6 @@
-# FE522 Project - Manuel Backtesting Module
+# FE522 Project - Backtesting Module
 
-This branch contains Manuel Bossi's fresh C++ setup for the portfolio backtesting and portfolio-accounting layer.
+This branch contains the C++ setup for the portfolio backtesting and portfolio-accounting layer.
 
 ## What This Branch Adds
 
@@ -53,7 +53,7 @@ BTC-USD Bitcoin in US dollars
 ## Module Layout
 
 ```text
-include/backtesting/   Public headers for Manuel's module
+include/backtesting/   Public headers for the backtesting module
 src/backtesting/       C++ implementations
 src/main_demo.cpp      Demo executable that reads data/asset_prices.csv
 main.py                Python downloader for cleaned asset price CSV
