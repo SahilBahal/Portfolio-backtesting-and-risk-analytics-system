@@ -1,5 +1,6 @@
 #include "backtesting/RebalanceStrategy.hpp"
 
+// Here we define the member functions of the strategy classes declared in RebalanceStrategy.hpp.
 std::string BuyAndHoldStrategy::name() const {
     return "Buy and Hold";
 }
@@ -22,10 +23,16 @@ std::vector<Trade> BuyAndHoldStrategy::rebalance(
     return {};
 }
 
+// Fixed monthly rebalancing restores target weights at the first trading day
+// of each new calendar month. The strategy checks the date on every row and
+// only trades when the month changes. The strategy calls Portfolio::rebalance()
+// to do the actual trading and accounting.
 std::string FixedWeightMonthlyRebalanceStrategy::name() const {
     return "Fixed Monthly Rebalance";
 }
 
+// This function checks if the date has moved into a new calendar month and only
+// rebalances on the first trading day of each new month.
 std::vector<Trade> FixedWeightMonthlyRebalanceStrategy::rebalance(
     std::size_t row,
     Portfolio& portfolio,
@@ -56,6 +63,7 @@ std::vector<Trade> FixedWeightMonthlyRebalanceStrategy::rebalance(
     );
 }
 
+// This function checks if the date has moved into a new calendar month.
 bool FixedWeightMonthlyRebalanceStrategy::is_new_month(
     const std::string& previous_date,
     const std::string& current_date
@@ -68,4 +76,3 @@ bool FixedWeightMonthlyRebalanceStrategy::is_new_month(
     // the calendar month.
     return previous_date.substr(0, 7) != current_date.substr(0, 7);
 }
-

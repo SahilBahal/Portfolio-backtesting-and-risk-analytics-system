@@ -18,7 +18,7 @@ void print_result(const BacktestResult& result) {
 }
 
 int main() {
-    // Small hard-coded data set used only to prove Manuel's section compiles
+    // Small hard-coded data set used only to prove the backtesting section compiles
     // and runs independently.
     std::vector<std::string> assets = {"SPY", "TLT"};
     std::vector<PriceRow> rows = {
@@ -47,4 +47,3 @@ int main() {
 
     return 0;
 }
-

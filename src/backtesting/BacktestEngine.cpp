@@ -1,8 +1,12 @@
 #include "backtesting/BacktestEngine.hpp"
 
+// Gives std::runtime_error for throwing exceptions when the input data is invalid.
 #include <stdexcept>
+
+// Gives std::move for efficiently moving input vectors into the class without copying.
 #include <utility>
 
+// Here we define the constructor and member functions of the BacktestEngine.
 BacktestEngine::BacktestEngine(
     const PriceTable& prices,
     std::vector<double> target_weights,
@@ -14,6 +18,10 @@ BacktestEngine::BacktestEngine(
     }
 }
 
+// This function runs one strategy through the backtest engine.
+// The engine simulates a day-by-day loop, calling the strategy's rebalance()
+// function on each row of the price table. The engine records the strategy's trades,
+// equity curve, and final weights in a BacktestResult object, which is returned at the end.
 BacktestResult BacktestEngine::run(const RebalanceStrategy& strategy) const {
     BacktestResult result;
     result.name = strategy.name();
@@ -32,7 +40,7 @@ BacktestResult BacktestEngine::run(const RebalanceStrategy& strategy) const {
     const double cost_rate = config_.transaction_cost_bps / 10000.0;
 
     for (std::size_t row = 1; row < prices_.row_count(); ++row) {
-        // This is the key polymorphism line.
+        // polymorphism line:
         // BacktestEngine does not know the concrete strategy type. It only
         // calls the virtual rebalance() function.
         std::vector<Trade> trades = strategy.rebalance(
@@ -59,19 +67,26 @@ BacktestResult BacktestEngine::run(const RebalanceStrategy& strategy) const {
     return result;
 }
 
+// This function fills the daily_returns vector in the BacktestResult by
+// calculating the percentage change in the equity curve from one day to the next.
 void BacktestEngine::fill_daily_returns(BacktestResult& result) {
     result.daily_returns.clear();
 
+    // We need at least 2 days to calculate a return. If we don't have enough data,
+    // we leave daily_returns empty.
     if (result.equity_curve.size() < 2) {
         return;
     }
 
+    // We reserve space in the daily_returns vector to avoid multiple reallocations
+    // as we push back returns. This is an optimization to improve performance.
     result.daily_returns.reserve(result.equity_curve.size() - 1);
 
+    // We loop through the equity curve starting from the second day, calculate the
+    // return as (today / yesterday - 1), and push it into the daily_returns vector.
     for (std::size_t i = 1; i < result.equity_curve.size(); ++i) {
         const double yesterday = result.equity_curve[i - 1];
         const double today = result.equity_curve[i];
         result.daily_returns.push_back(today / yesterday - 1.0);
     }
 }
-

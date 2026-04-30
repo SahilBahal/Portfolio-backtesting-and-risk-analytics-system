@@ -4,7 +4,9 @@
 #include "backtesting/PriceTable.hpp"
 #include "backtesting/Types.hpp"
 
+// Gives std::size_t, an unsigned integer type used for row indexes.
 #include <cstddef>
+// Imports std::string to store text and std::vector to store dynamic arrays.
 #include <string>
 #include <vector>
 
@@ -68,4 +70,3 @@ private:
         const std::string& current_date
     );
 };
-
