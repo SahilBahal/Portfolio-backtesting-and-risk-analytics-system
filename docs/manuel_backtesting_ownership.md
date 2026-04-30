@@ -11,15 +11,17 @@ This module provides the reusable C++ engine that steps through historical price
 | File | Purpose |
 | --- | --- |
 | `include/backtesting/Types.hpp` | Shared structs for prices, trades, and backtest results. |
+| `include/backtesting/CsvReader.hpp` | Declares the CSV reader that converts generated price files into `PriceTable`. |
 | `include/backtesting/PriceTable.hpp` | Stores historical asset prices by date. |
 | `include/backtesting/Portfolio.hpp` | Tracks cash, holdings, portfolio value, weights, trades, and transaction costs. |
 | `include/backtesting/RebalanceStrategy.hpp` | Defines the abstract strategy interface plus buy-and-hold and fixed monthly rebalance strategies. |
 | `include/backtesting/BacktestEngine.hpp` | Defines the simulation engine interface and backtest configuration. |
+| `src/backtesting/CsvReader.cpp` | Implements CSV parsing, column validation, and conversion into price rows. |
 | `src/backtesting/PriceTable.cpp` | Implements basic price-table validation and lookup. |
 | `src/backtesting/Portfolio.cpp` | Implements portfolio accounting and rebalancing logic. |
 | `src/backtesting/RebalanceStrategy.cpp` | Implements buy-and-hold and monthly fixed-weight strategy behavior. |
 | `src/backtesting/BacktestEngine.cpp` | Implements the day-by-day backtest loop. |
-| `src/main_demo.cpp` | Small standalone demo proving Manuel's module compiles and runs. |
+| `src/main_demo.cpp` | Standalone demo that reads `data/asset_prices.csv` and runs both baseline strategies. |
 
 ## How Other Team Members Plug In
 

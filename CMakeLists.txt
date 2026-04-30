@@ -12,6 +12,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_library(backtesting
     src/backtesting/BacktestEngine.cpp
+    src/backtesting/CsvReader.cpp
     src/backtesting/Portfolio.cpp
     src/backtesting/PriceTable.cpp
     src/backtesting/RebalanceStrategy.cpp
@@ -25,8 +26,8 @@ else()
     target_compile_options(backtesting PRIVATE -Wall -Wextra -pedantic)
 endif()
 
-add_executable(manuel_backtesting_demo
+add_executable(backtesting_demo
     src/main_demo.cpp
 )
 
-target_link_libraries(manuel_backtesting_demo PRIVATE backtesting)
+target_link_libraries(backtesting_demo PRIVATE backtesting)

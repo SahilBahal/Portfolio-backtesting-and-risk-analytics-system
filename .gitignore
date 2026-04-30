@@ -1,4 +1,5 @@
 .DS_Store
+.venv/
 build/
 cmake-build-*/
 CMakeFiles/
