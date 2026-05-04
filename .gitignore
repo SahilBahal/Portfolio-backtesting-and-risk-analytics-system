@@ -1,6 +1,7 @@
 .DS_Store
 .venv/
 build/
+output/
 cmake-build-*/
 CMakeFiles/
 CMakeCache.txt

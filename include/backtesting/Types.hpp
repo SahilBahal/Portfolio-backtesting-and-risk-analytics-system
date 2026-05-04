@@ -17,8 +17,8 @@ struct PriceRow {
 };
 
 // We record one trade created during a rebalancing: which date,
-// which strategy, which asset, how many shares, how much notional $, $ transaction cost,
-// and what turnover percentage.
+// which strategy, which asset, how many shares, the execution price, how much
+// notional $, $ transaction cost, and what turnover percentage.
 // Positive shares/notional mean buy.
 // Negative shares/notional mean sell.
 struct Trade {
@@ -26,16 +26,18 @@ struct Trade {
     std::string strategy;
     std::string asset;
     double shares = 0.0;
+    double price = 0.0;
     double notional = 0.0;
     double cost = 0.0;
     double turnover = 0.0;
 };
 
 // We store complete results from running one strategy through the backtest engine.
-// Sahil's risk module can consume this object to compute Sharpe, drawdown,
+// The risk module can consume this object to compute Sharpe, drawdown,
 // VaR, CVaR, Monte Carlo inputs, and reporting tables.
 struct BacktestResult {
     std::string name;
+    std::vector<std::string> asset_names;
     std::vector<std::string> dates;
     std::vector<double> equity_curve;
     std::vector<double> daily_returns;

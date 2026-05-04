@@ -25,6 +25,7 @@ BacktestEngine::BacktestEngine(
 BacktestResult BacktestEngine::run(const RebalanceStrategy& strategy) const {
     BacktestResult result;
     result.name = strategy.name();
+    result.asset_names = prices_.assets();
 
     // Every strategy starts from the same initial portfolio.
     Portfolio portfolio(config_.initial_capital, prices_.asset_count());

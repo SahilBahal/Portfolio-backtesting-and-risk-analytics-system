@@ -16,15 +16,17 @@ This module provides the reusable C++ engine that steps through historical price
 | `include/backtesting/Portfolio.hpp` | Tracks cash, holdings, portfolio value, weights, trades, and transaction costs. |
 | `include/backtesting/RebalanceStrategy.hpp` | Defines the abstract strategy interface plus buy-and-hold and fixed monthly rebalance strategies. |
 | `include/backtesting/BacktestEngine.hpp` | Defines the simulation engine interface and backtest configuration. |
+| `include/risk/*.hpp` | Defines risk metrics, Monte Carlo simulation, stress testing, and report printing interfaces. |
 | `src/backtesting/CsvReader.cpp` | Implements CSV parsing, column validation, and conversion into price rows. |
 | `src/backtesting/PriceTable.cpp` | Implements basic price-table validation and lookup. |
 | `src/backtesting/Portfolio.cpp` | Implements portfolio accounting and rebalancing logic. |
 | `src/backtesting/RebalanceStrategy.cpp` | Implements buy-and-hold and monthly fixed-weight strategy behavior. |
 | `src/backtesting/BacktestEngine.cpp` | Implements the day-by-day backtest loop. |
+| `src/risk/*.cpp` | Implements risk metrics, Monte Carlo simulation, stress testing, and CSV report writing. |
 | `src/main_demo.cpp` | Standalone demo that reads `data/asset_prices.csv` and runs both baseline strategies. |
 
 ## How Other Team Members Plug In
 
 Roberto's optimization strategy can implement or reuse the `RebalanceStrategy` interface to generate optimized target weights.
 
-Sahil's risk and reporting modules can consume the `BacktestResult` object, especially the equity curve, daily returns, trade log, final weights, and turnover.
+Risk and reporting modules consume the `BacktestResult` object, especially the equity curve, daily returns, trade log, asset names, final weights, and turnover.

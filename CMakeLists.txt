@@ -26,8 +26,24 @@ else()
     target_compile_options(backtesting PRIVATE -Wall -Wextra -pedantic)
 endif()
 
+add_library(risk
+    src/risk/MonteCarloSimulator.cpp
+    src/risk/ReportPrinter.cpp
+    src/risk/RiskMetrics.cpp
+    src/risk/StressTestEngine.cpp
+)
+
+target_include_directories(risk PUBLIC include)
+target_link_libraries(risk PUBLIC backtesting)
+
+if (MSVC)
+    target_compile_options(risk PRIVATE /W4)
+else()
+    target_compile_options(risk PRIVATE -Wall -Wextra -pedantic)
+endif()
+
 add_executable(backtesting_demo
     src/main_demo.cpp
 )
 
-target_link_libraries(backtesting_demo PRIVATE backtesting)
+target_link_libraries(backtesting_demo PRIVATE risk)

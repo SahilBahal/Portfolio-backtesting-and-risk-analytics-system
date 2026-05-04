@@ -166,6 +166,7 @@ std::vector<Trade> Portfolio::rebalance(
         trade.strategy = strategy_name;
         trade.asset = assets[i];
         trade.shares = trade_shares;
+        trade.price = prices[i];
         trade.notional = delta_dollars;
         trade.cost = cost;
         trade.turnover = std::fabs(delta_dollars) / value_before;

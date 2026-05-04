@@ -7,6 +7,14 @@
 #include "backtesting/RebalanceStrategy.hpp"
 // Types.hpp gives us BacktestResult, Trade, and PriceRow structs.
 #include "backtesting/Types.hpp"
+// MonteCarloSimulator creates future portfolio outcome simulations from daily returns.
+#include "risk/MonteCarloSimulator.hpp"
+// ReportPrinter writes equity, trade, metric, Monte Carlo, and stress-test CSV outputs.
+#include "risk/ReportPrinter.hpp"
+// RiskMetrics computes total return, volatility, Sharpe, drawdown, VaR, and CVaR.
+#include "risk/RiskMetrics.hpp"
+// StressTestEngine applies deterministic scenario shocks to final portfolio weights.
+#include "risk/StressTestEngine.hpp"
 
 // Gives std::size_t, the unsigned integer type used for vector indexes.
 #include <cstddef>
@@ -74,6 +82,36 @@ void print_result(const BacktestResult& result, const std::vector<std::string>& 
 
     // Print two new lines after each strategy result.
     std::cout << "\n\n";
+}
+
+// Run the risk/reporting module on one completed BacktestResult.
+//
+// This function proves the integration point:
+// BacktestEngine produces BacktestResult, then the risk module consumes it.
+void write_risk_outputs(const BacktestResult& result, const std::string& output_dir) {
+    // RiskMetrics reads the equity curve and daily returns from BacktestResult.
+    RiskMetrics risk_metrics;
+    const RiskReport risk_report = risk_metrics.compute(result);
+
+    // MonteCarloSimulator fits a simple normal distribution to historical daily
+    // returns and simulates future terminal portfolio values.
+    // The fixed seed makes the demo reproducible for class/testing.
+    MonteCarloSimulator monte_carlo;
+    const MonteCarloResult monte_carlo_result = monte_carlo.simulate(
+        result,
+        10000,
+        252,
+        42
+    );
+
+    // StressTestEngine uses result.asset_names to map shocks to the correct assets.
+    StressTestEngine stress_test;
+    stress_test.load_defaults(result.asset_names);
+    const std::vector<StressResult> stress_results = stress_test.run(result);
+
+    // ReportPrinter writes all outputs to a strategy-specific folder.
+    ReportPrinter printer(output_dir);
+    printer.print_all(result, risk_report, monte_carlo_result, stress_results);
 }
 
 } // namespace
@@ -152,13 +190,17 @@ int main() {
     // engine.run() accepts a RebalanceStrategy reference.
     // Because buy_and_hold is derived from RebalanceStrategy, C++ calls the
     // correct rebalance() method using dynamic dispatch.
-    print_result(engine.run(buy_and_hold), prices.assets());
+    const BacktestResult buy_and_hold_result = engine.run(buy_and_hold);
+    print_result(buy_and_hold_result, prices.assets());
+    write_risk_outputs(buy_and_hold_result, "output/buy_and_hold");
 
     // Run strategy 2: fixed monthly rebalance.
     //
     // Same engine, same price data, same target weights, different strategy.
     // This is the main benefit of the Strategy Pattern.
-    print_result(engine.run(monthly_rebalance), prices.assets());
+    const BacktestResult monthly_rebalance_result = engine.run(monthly_rebalance);
+    print_result(monthly_rebalance_result, prices.assets());
+    write_risk_outputs(monthly_rebalance_result, "output/fixed_monthly_rebalance");
 
     // Returning 0 tells the operating system the program finished successfully.
     return 0;
