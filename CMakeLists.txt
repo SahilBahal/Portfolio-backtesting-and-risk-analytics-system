@@ -42,8 +42,22 @@ else()
     target_compile_options(risk PRIVATE -Wall -Wextra -pedantic)
 endif()
 
+add_library(portfolio_optimizer
+    src/portfolio_optimizer/OptimizationEngine.cpp
+    src/portfolio_optimizer/OptimizedMonthlyRebalanceStrategy.cpp
+)
+
+target_include_directories(portfolio_optimizer PUBLIC include)
+target_link_libraries(portfolio_optimizer PUBLIC backtesting)
+
+if (MSVC)
+    target_compile_options(portfolio_optimizer PRIVATE /W4)
+else()
+    target_compile_options(portfolio_optimizer PRIVATE -Wall -Wextra -pedantic)
+endif()
+
 add_executable(backtesting_demo
     src/main_demo.cpp
 )
 
-target_link_libraries(backtesting_demo PRIVATE risk)
+target_link_libraries(backtesting_demo PRIVATE risk portfolio_optimizer)

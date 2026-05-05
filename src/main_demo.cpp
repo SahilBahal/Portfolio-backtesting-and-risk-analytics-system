@@ -7,6 +7,8 @@
 #include "backtesting/RebalanceStrategy.hpp"
 // Types.hpp gives us BacktestResult, Trade, and PriceRow structs.
 #include "backtesting/Types.hpp"
+// OptimizedMonthlyRebalanceStrategy runs the inverse-volatility optimizer.
+#include "portfolio_optimizer/OptimizedMonthlyRebalanceStrategy.hpp"
 // MonteCarloSimulator creates future portfolio outcome simulations from daily returns.
 #include "risk/MonteCarloSimulator.hpp"
 // ReportPrinter writes equity, trade, metric, Monte Carlo, and stress-test CSV outputs.
@@ -184,6 +186,7 @@ int main() {
     // This demonstrates inheritance and polymorphism from the course material.
     BuyAndHoldStrategy buy_and_hold;
     FixedWeightMonthlyRebalanceStrategy monthly_rebalance;
+    OptimizedMonthlyRebalanceStrategy optimized_rebalance;
 
     // Run strategy 1: buy-and-hold.
     //
@@ -201,6 +204,15 @@ int main() {
     const BacktestResult monthly_rebalance_result = engine.run(monthly_rebalance);
     print_result(monthly_rebalance_result, prices.assets());
     write_risk_outputs(monthly_rebalance_result, "output/fixed_monthly_rebalance");
+
+    // Run strategy 3: optimized monthly rebalance.
+    //
+    // This strategy still plugs into the same RebalanceStrategy interface.
+    // The difference is that it computes dynamic inverse-volatility weights
+    // instead of using the fixed target weights defined above.
+    const BacktestResult optimized_rebalance_result = engine.run(optimized_rebalance);
+    print_result(optimized_rebalance_result, prices.assets());
+    write_risk_outputs(optimized_rebalance_result, "output/optimized_monthly_rebalance");
 
     // Returning 0 tells the operating system the program finished successfully.
     return 0;

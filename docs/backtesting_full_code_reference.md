@@ -1,6 +1,6 @@
 # Backtesting Module: Full Code Reference
 
-This single Markdown file explains the architecture of the backtesting and risk modules and includes the full code for each relevant project file.
+This single Markdown file explains the architecture of the backtesting, optimizer, and risk modules and includes the full code for each relevant project file.
 
 It is meant as a study/reference document. The actual runnable source code remains in the normal `.hpp`, `.cpp`, `CMakeLists.txt`, and Python support files.
 
@@ -12,6 +12,9 @@ main.py -> data/asset_prices.csv
         -> PriceTable
         -> BacktestEngine
         -> RebalanceStrategy
+           -> BuyAndHoldStrategy
+           -> FixedWeightMonthlyRebalanceStrategy
+           -> OptimizedMonthlyRebalanceStrategy -> OptimizationEngine
         -> Portfolio
         -> BacktestResult
         -> RiskMetrics / MonteCarloSimulator / StressTestEngine
@@ -21,31 +24,37 @@ main.py -> data/asset_prices.csv
 ## Main Design Choices
 
 - `BacktestEngine` owns the day-by-day simulation loop.
-- `RebalanceStrategy` is the Strategy Pattern interface.
+- `RebalanceStrategy` is the Strategy Pattern interface. The engine receives a `RebalanceStrategy&`, so it can run buy-and-hold, fixed rebalancing, or optimized rebalancing without changing the engine code.
+- `OptimizedMonthlyRebalanceStrategy` proves Robert's optimizer can plug into the same interface as the baseline strategies.
+- `OptimizationEngine` calculates inverse-volatility weights using a trailing lookback window.
 - `Portfolio` owns accounting state: cash, holdings, trades, transaction costs, and final weights.
 - `BacktestResult` is the shared contract consumed by the risk/reporting module.
 - `Trade` includes `shares`, `price`, `notional`, `cost`, and `turnover` so reporting can write complete trade CSVs.
 - `asset_names` maps final weights and stress-test shocks to the right assets.
-- CMake builds separate `backtesting` and `risk` libraries, then links them into `backtesting_demo`.
+- CMake builds separate `backtesting`, `portfolio_optimizer`, and `risk` libraries, then links them into `backtesting_demo`.
 
 ## File Map
 
 | File | Purpose |
 | --- | --- |
-| `CMakeLists.txt` | Defines the C++17 build, builds the backtesting and risk libraries, and creates the `backtesting_demo` executable. |
-| `src/main_demo.cpp` | Main demo program. It reads `data/asset_prices.csv`, defines target weights, runs strategies, prints results, and writes risk/report CSV outputs. |
-| `include/backtesting/Types.hpp` | Defines shared structs: `PriceRow`, `Trade`, and `BacktestResult`. |
-| `include/backtesting/CsvReader.hpp` | Declares the reader that loads a wide price CSV into a `PriceTable`. |
-| `src/backtesting/CsvReader.cpp` | Implements CSV parsing, validates columns, converts text prices into doubles, and returns a `PriceTable`. |
-| `include/backtesting/PriceTable.hpp` | Declares the class that stores validated dates, asset names, and prices. |
+| `CMakeLists.txt` | Defines the C++17 build, builds the backtesting, optimizer, and risk libraries, and creates the backtesting_demo executable. |
+| `src/main_demo.cpp` | Main demo program. It reads data/asset_prices.csv, defines target weights, runs buy-and-hold, fixed monthly rebalance, and optimized monthly rebalance, then writes report outputs. |
+| `include/backtesting/Types.hpp` | Defines shared data objects used across modules: PriceRow, Trade, and BacktestResult. |
+| `include/backtesting/CsvReader.hpp` | Declares the CSV reader that loads a wide price CSV into a PriceTable. |
+| `src/backtesting/CsvReader.cpp` | Implements CSV parsing, validates columns, converts text prices into doubles, and returns a PriceTable. |
+| `include/backtesting/PriceTable.hpp` | Declares the class that stores validated dates, asset names, and historical prices. |
 | `src/backtesting/PriceTable.cpp` | Implements shape checks, positive-price checks, and safe lookup methods. |
-| `include/backtesting/Portfolio.hpp` | Declares the portfolio accounting class for cash, holdings, weights, and rebalancing trades. |
+| `include/backtesting/Portfolio.hpp` | Declares the portfolio accounting class for cash, holdings, weights, trades, and rebalancing. |
 | `src/backtesting/Portfolio.cpp` | Implements initial investment, portfolio value, final weights, transaction costs, and rebalance accounting. |
-| `include/backtesting/RebalanceStrategy.hpp` | Declares the abstract strategy interface and the two baseline strategy classes. |
+| `include/backtesting/RebalanceStrategy.hpp` | Declares the abstract strategy interface plus the two baseline strategy classes. |
 | `src/backtesting/RebalanceStrategy.cpp` | Implements buy-and-hold and fixed monthly rebalance behavior. |
 | `include/backtesting/BacktestEngine.hpp` | Declares the simulation engine and backtest configuration. |
 | `src/backtesting/BacktestEngine.cpp` | Implements the daily backtest loop, polymorphic strategy calls, trade collection, and daily return calculation. |
-| `include/risk/RiskMetrics.hpp` | Declares risk metric outputs and the `RiskMetrics` calculator. |
+| `include/portfolio_optimizer/OptimizationEngine.hpp` | Declares portfolio optimization helper functions such as inverse-volatility weights and covariance calculations. |
+| `src/portfolio_optimizer/OptimizationEngine.cpp` | Implements return, volatility, covariance, inverse-volatility weight, and variance calculations. |
+| `include/portfolio_optimizer/OptimizedMonthlyRebalanceStrategy.hpp` | Declares the optimized monthly rebalance strategy that plugs into RebalanceStrategy. |
+| `src/portfolio_optimizer/OptimizedMonthlyRebalanceStrategy.cpp` | Implements monthly inverse-volatility rebalancing through the same strategy interface as the baseline strategies. |
+| `include/risk/RiskMetrics.hpp` | Declares risk metric outputs and the RiskMetrics calculator. |
 | `src/risk/RiskMetrics.cpp` | Implements total return, annualized return, volatility, Sharpe ratio, max drawdown, VaR, CVaR, and rolling volatility. |
 | `include/risk/MonteCarloSimulator.hpp` | Declares Monte Carlo simulation outputs and interface. |
 | `src/risk/MonteCarloSimulator.cpp` | Implements normal-return Monte Carlo simulation of future terminal portfolio values. |
@@ -53,12 +62,12 @@ main.py -> data/asset_prices.csv
 | `src/risk/StressTestEngine.cpp` | Implements default stress scenarios for SPY, TLT, GLD, and BTC-USD. |
 | `include/risk/ReportPrinter.hpp` | Declares CSV report-writing functions. |
 | `src/risk/ReportPrinter.cpp` | Writes equity curves, trades, metrics, rolling volatility, Monte Carlo, and stress-test CSV outputs. |
-| `main.py` | Downloads real market data with yfinance and writes `data/asset_prices.csv` for the C++ demo. |
+| `main.py` | Downloads real market data with yfinance and writes data/asset_prices.csv for the C++ demo. |
 | `requirements-data.txt` | Lists the Python packages needed to regenerate the price CSV. |
 
 ## CSV Data File
 
-The generated CSV is `data/asset_prices.csv`. It is not pasted in full here because it contains 1,590 rows of data. Its format is:
+The generated CSV is `data/asset_prices.csv`. It is not pasted in full here because it contains many rows of market data. Its format is:
 
 ```text
 date,SPY,TLT,GLD,BTC-USD
@@ -70,7 +79,7 @@ date,SPY,TLT,GLD,BTC-USD
 
 ### Build File: `CMakeLists.txt`
 
-Defines the C++17 build, builds the backtesting and risk libraries, and creates the `backtesting_demo` executable.
+Defines the C++17 build, builds the backtesting, optimizer, and risk libraries, and creates the backtesting_demo executable.
 
 ```cmake
 cmake_minimum_required(VERSION 3.16)
@@ -117,16 +126,30 @@ else()
     target_compile_options(risk PRIVATE -Wall -Wextra -pedantic)
 endif()
 
+add_library(portfolio_optimizer
+    src/portfolio_optimizer/OptimizationEngine.cpp
+    src/portfolio_optimizer/OptimizedMonthlyRebalanceStrategy.cpp
+)
+
+target_include_directories(portfolio_optimizer PUBLIC include)
+target_link_libraries(portfolio_optimizer PUBLIC backtesting)
+
+if (MSVC)
+    target_compile_options(portfolio_optimizer PRIVATE /W4)
+else()
+    target_compile_options(portfolio_optimizer PRIVATE -Wall -Wextra -pedantic)
+endif()
+
 add_executable(backtesting_demo
     src/main_demo.cpp
 )
 
-target_link_libraries(backtesting_demo PRIVATE risk)
+target_link_libraries(backtesting_demo PRIVATE risk portfolio_optimizer)
 ```
 
 ### C++ Demo Entry Point: `src/main_demo.cpp`
 
-Main demo program. It reads `data/asset_prices.csv`, defines target weights, runs strategies, prints results, and writes risk/report CSV outputs.
+Main demo program. It reads data/asset_prices.csv, defines target weights, runs buy-and-hold, fixed monthly rebalance, and optimized monthly rebalance, then writes report outputs.
 
 ```cpp
 // BacktestEngine runs the day-by-day simulation loop.
@@ -138,6 +161,8 @@ Main demo program. It reads `data/asset_prices.csv`, defines target weights, run
 #include "backtesting/RebalanceStrategy.hpp"
 // Types.hpp gives us BacktestResult, Trade, and PriceRow structs.
 #include "backtesting/Types.hpp"
+// OptimizedMonthlyRebalanceStrategy runs the inverse-volatility optimizer.
+#include "portfolio_optimizer/OptimizedMonthlyRebalanceStrategy.hpp"
 // MonteCarloSimulator creates future portfolio outcome simulations from daily returns.
 #include "risk/MonteCarloSimulator.hpp"
 // ReportPrinter writes equity, trade, metric, Monte Carlo, and stress-test CSV outputs.
@@ -315,6 +340,7 @@ int main() {
     // This demonstrates inheritance and polymorphism from the course material.
     BuyAndHoldStrategy buy_and_hold;
     FixedWeightMonthlyRebalanceStrategy monthly_rebalance;
+    OptimizedMonthlyRebalanceStrategy optimized_rebalance;
 
     // Run strategy 1: buy-and-hold.
     //
@@ -333,6 +359,15 @@ int main() {
     print_result(monthly_rebalance_result, prices.assets());
     write_risk_outputs(monthly_rebalance_result, "output/fixed_monthly_rebalance");
 
+    // Run strategy 3: optimized monthly rebalance.
+    //
+    // This strategy still plugs into the same RebalanceStrategy interface.
+    // The difference is that it computes dynamic inverse-volatility weights
+    // instead of using the fixed target weights defined above.
+    const BacktestResult optimized_rebalance_result = engine.run(optimized_rebalance);
+    print_result(optimized_rebalance_result, prices.assets());
+    write_risk_outputs(optimized_rebalance_result, "output/optimized_monthly_rebalance");
+
     // Returning 0 tells the operating system the program finished successfully.
     return 0;
 }
@@ -340,7 +375,7 @@ int main() {
 
 ### Shared Types Header: `include/backtesting/Types.hpp`
 
-Defines shared structs: `PriceRow`, `Trade`, and `BacktestResult`.
+Defines shared data objects used across modules: PriceRow, Trade, and BacktestResult.
 
 ```cpp
 // This tells the compiler to include this header only once, avoiding duplicate definitions.
@@ -394,7 +429,7 @@ struct BacktestResult {
 
 ### CSV Reader Header: `include/backtesting/CsvReader.hpp`
 
-Declares the reader that loads a wide price CSV into a `PriceTable`.
+Declares the CSV reader that loads a wide price CSV into a PriceTable.
 
 ```cpp
 // This tells the compiler to include this header only once, avoiding duplicate definitions.
@@ -424,9 +459,9 @@ public:
 };
 ```
 
-### CSV Reader Implementation: `src/backtesting/CsvReader.cpp`
+### CSV Reader Source: `src/backtesting/CsvReader.cpp`
 
-Implements CSV parsing, validates columns, converts text prices into doubles, and returns a `PriceTable`.
+Implements CSV parsing, validates columns, converts text prices into doubles, and returns a PriceTable.
 
 ```cpp
 #include "backtesting/CsvReader.hpp"
@@ -567,7 +602,7 @@ PriceTable CsvReader::read_price_table(const std::string& path) {
 
 ### Price Table Header: `include/backtesting/PriceTable.hpp`
 
-Declares the class that stores validated dates, asset names, and prices.
+Declares the class that stores validated dates, asset names, and historical prices.
 
 ```cpp
 // This tells the compiler to include this header only once, avoiding duplicate definitions.
@@ -629,7 +664,7 @@ private:
 };
 ```
 
-### Price Table Implementation: `src/backtesting/PriceTable.cpp`
+### Price Table Source: `src/backtesting/PriceTable.cpp`
 
 Implements shape checks, positive-price checks, and safe lookup methods.
 
@@ -706,7 +741,7 @@ const std::vector<double>& PriceTable::prices(std::size_t row) const {
 
 ### Portfolio Header: `include/backtesting/Portfolio.hpp`
 
-Declares the portfolio accounting class for cash, holdings, weights, and rebalancing trades.
+Declares the portfolio accounting class for cash, holdings, weights, trades, and rebalancing.
 
 ```cpp
 // This tells the compiler to include this header only once, avoiding duplicate definitions.
@@ -766,7 +801,7 @@ private:
 };
 ```
 
-### Portfolio Implementation: `src/backtesting/Portfolio.cpp`
+### Portfolio Source: `src/backtesting/Portfolio.cpp`
 
 Implements initial investment, portfolio value, final weights, transaction costs, and rebalance accounting.
 
@@ -963,7 +998,7 @@ std::vector<Trade> Portfolio::rebalance(
 
 ### Strategy Header: `include/backtesting/RebalanceStrategy.hpp`
 
-Declares the abstract strategy interface and the two baseline strategy classes.
+Declares the abstract strategy interface plus the two baseline strategy classes.
 
 ```cpp
 #pragma once
@@ -1040,7 +1075,7 @@ private:
 };
 ```
 
-### Strategy Implementation: `src/backtesting/RebalanceStrategy.cpp`
+### Strategy Source: `src/backtesting/RebalanceStrategy.cpp`
 
 Implements buy-and-hold and fixed monthly rebalance behavior.
 
@@ -1174,7 +1209,7 @@ private:
 };
 ```
 
-### Backtest Engine Implementation: `src/backtesting/BacktestEngine.cpp`
+### Backtest Engine Source: `src/backtesting/BacktestEngine.cpp`
 
 Implements the daily backtest loop, polymorphic strategy calls, trade collection, and daily return calculation.
 
@@ -1274,9 +1309,382 @@ void BacktestEngine::fill_daily_returns(BacktestResult& result) {
 }
 ```
 
+### Optimizer Header: `include/portfolio_optimizer/OptimizationEngine.hpp`
+
+Declares portfolio optimization helper functions such as inverse-volatility weights and covariance calculations.
+
+```cpp
+#pragma once
+
+#include "backtesting/PriceTable.hpp"
+
+#include <cstddef>
+#include <vector>
+
+class OptimizationEngine {
+public:
+    // Computes daily simple returns for each asset using:
+    // return = (price_today / price_yesterday) - 1
+    static std::vector<std::vector<double>> compute_returns(
+        const PriceTable& prices,
+        std::size_t end_row,
+        std::size_t lookback
+    );
+
+    // Computes the volatility of each asset over the lookback window.
+    static std::vector<double> compute_volatility(
+        const PriceTable& prices,
+        std::size_t end_row,
+        std::size_t lookback
+    );
+
+    // Computes inverse-volatility portfolio weights.
+    //
+    // Assets with lower volatility receive larger weights.
+    // The output vector sums to 1.0.
+    static std::vector<double> inverse_volatility_weights(
+        const PriceTable& prices,
+        std::size_t end_row,
+        std::size_t lookback
+    );
+
+    // Computes the covariance matrix of asset returns.
+    static std::vector<std::vector<double>> compute_covariance_matrix(
+        const PriceTable& prices,
+        std::size_t end_row,
+        std::size_t lookback
+    );
+
+    // Computes portfolio variance:
+    // w^T Sigma w
+    static double portfolio_variance(
+        const std::vector<double>& weights,
+        const std::vector<std::vector<double>>& covariance_matrix
+    );
+
+private:
+    // Normalizes weights so they sum to 1.0.
+    static std::vector<double> normalize_weights(
+        const std::vector<double>& raw_weights
+    );
+};
+```
+
+### Optimizer Source: `src/portfolio_optimizer/OptimizationEngine.cpp`
+
+Implements return, volatility, covariance, inverse-volatility weight, and variance calculations.
+
+```cpp
+#include "portfolio_optimizer/OptimizationEngine.hpp"
+
+#include <cmath>
+#include <stdexcept>
+#include <vector>
+
+std::vector<std::vector<double>> OptimizationEngine::compute_returns(
+    const PriceTable& prices,
+    std::size_t end_row,
+    std::size_t lookback
+) {
+    if (prices.row_count() == 0 || prices.asset_count() == 0) {
+        throw std::runtime_error("PriceTable is empty.");
+    }
+
+    if (end_row >= prices.row_count()) {
+        throw std::out_of_range("end_row is outside PriceTable.");
+    }
+
+    if (end_row < lookback) {
+        throw std::runtime_error("Not enough price history for lookback window.");
+    }
+
+    const std::size_t asset_count = prices.asset_count();
+
+    std::vector<std::vector<double>> returns;
+    returns.reserve(lookback);
+
+    for (std::size_t row = end_row - lookback + 1; row <= end_row; ++row) {
+        const auto& today_prices = prices.prices(row);
+        const auto& yesterday_prices = prices.prices(row - 1);
+
+        std::vector<double> row_returns;
+        row_returns.reserve(asset_count);
+
+        for (std::size_t asset = 0; asset < asset_count; ++asset) {
+            if (yesterday_prices[asset] <= 0.0) {
+                throw std::runtime_error("Invalid previous price found.");
+            }
+
+            double r = (today_prices[asset] / yesterday_prices[asset]) - 1.0;
+            row_returns.push_back(r);
+        }
+
+        returns.push_back(row_returns);
+    }
+
+    return returns;
+}
+
+std::vector<double> OptimizationEngine::compute_volatility(
+    const PriceTable& prices,
+    std::size_t end_row,
+    std::size_t lookback
+) {
+    auto returns = compute_returns(prices, end_row, lookback);
+
+    const std::size_t n = returns.size();
+    const std::size_t asset_count = prices.asset_count();
+
+    std::vector<double> means(asset_count, 0.0);
+    std::vector<double> volatilities(asset_count, 0.0);
+
+    for (const auto& row_returns : returns) {
+        for (std::size_t asset = 0; asset < asset_count; ++asset) {
+            means[asset] += row_returns[asset];
+        }
+    }
+
+    for (double& mean : means) {
+        mean /= static_cast<double>(n);
+    }
+
+    for (const auto& row_returns : returns) {
+        for (std::size_t asset = 0; asset < asset_count; ++asset) {
+            double diff = row_returns[asset] - means[asset];
+            volatilities[asset] += diff * diff;
+        }
+    }
+
+    for (double& vol : volatilities) {
+        if (n > 1) {
+            vol = std::sqrt(vol / static_cast<double>(n - 1));
+        } else {
+            vol = 0.0;
+        }
+    }
+
+    return volatilities;
+}
+
+std::vector<double> OptimizationEngine::inverse_volatility_weights(
+    const PriceTable& prices,
+    std::size_t end_row,
+    std::size_t lookback
+) {
+    auto volatilities = compute_volatility(prices, end_row, lookback);
+
+    std::vector<double> raw_weights;
+    raw_weights.reserve(volatilities.size());
+
+    for (double vol : volatilities) {
+        if (vol <= 0.0) {
+            raw_weights.push_back(0.0);
+        } else {
+            raw_weights.push_back(1.0 / vol);
+        }
+    }
+
+    return normalize_weights(raw_weights);
+}
+
+std::vector<std::vector<double>> OptimizationEngine::compute_covariance_matrix(
+    const PriceTable& prices,
+    std::size_t end_row,
+    std::size_t lookback
+) {
+    auto returns = compute_returns(prices, end_row, lookback);
+
+    const std::size_t n = returns.size();
+    const std::size_t asset_count = prices.asset_count();
+
+    std::vector<double> means(asset_count, 0.0);
+
+    for (const auto& row_returns : returns) {
+        for (std::size_t asset = 0; asset < asset_count; ++asset) {
+            means[asset] += row_returns[asset];
+        }
+    }
+
+    for (double& mean : means) {
+        mean /= static_cast<double>(n);
+    }
+
+    std::vector<std::vector<double>> covariance_matrix(
+        asset_count,
+        std::vector<double>(asset_count, 0.0)
+    );
+
+    for (std::size_t i = 0; i < asset_count; ++i) {
+        for (std::size_t j = 0; j < asset_count; ++j) {
+            double covariance = 0.0;
+
+            for (const auto& row_returns : returns) {
+                covariance +=
+                    (row_returns[i] - means[i]) *
+                    (row_returns[j] - means[j]);
+            }
+
+            if (n > 1) {
+                covariance_matrix[i][j] = covariance / static_cast<double>(n - 1);
+            }
+        }
+    }
+
+    return covariance_matrix;
+}
+
+double OptimizationEngine::portfolio_variance(
+    const std::vector<double>& weights,
+    const std::vector<std::vector<double>>& covariance_matrix
+) {
+    const std::size_t n = weights.size();
+
+    if (covariance_matrix.size() != n) {
+        throw std::runtime_error("Covariance matrix size does not match weights.");
+    }
+
+    double variance = 0.0;
+
+    for (std::size_t i = 0; i < n; ++i) {
+        if (covariance_matrix[i].size() != n) {
+            throw std::runtime_error("Covariance matrix is not square.");
+        }
+
+        for (std::size_t j = 0; j < n; ++j) {
+            variance += weights[i] * covariance_matrix[i][j] * weights[j];
+        }
+    }
+
+    return variance;
+}
+
+std::vector<double> OptimizationEngine::normalize_weights(
+    const std::vector<double>& raw_weights
+) {
+    double total = 0.0;
+
+    for (double weight : raw_weights) {
+        total += weight;
+    }
+
+    if (total <= 0.0) {
+        const double equal_weight = 1.0 / static_cast<double>(raw_weights.size());
+        return std::vector<double>(raw_weights.size(), equal_weight);
+    }
+
+    std::vector<double> normalized;
+    normalized.reserve(raw_weights.size());
+
+    for (double weight : raw_weights) {
+        normalized.push_back(weight / total);
+    }
+
+    return normalized;
+}
+```
+
+### Optimized Strategy Header: `include/portfolio_optimizer/OptimizedMonthlyRebalanceStrategy.hpp`
+
+Declares the optimized monthly rebalance strategy that plugs into RebalanceStrategy.
+
+```cpp
+#pragma once
+
+#include "backtesting/RebalanceStrategy.hpp"
+#include "OptimizationEngine.hpp"
+
+#include <cstddef>
+#include <string>
+#include <vector>
+
+class OptimizedMonthlyRebalanceStrategy : public RebalanceStrategy {
+public:
+    explicit OptimizedMonthlyRebalanceStrategy(std::size_t lookback_days = 60);
+
+    std::string name() const override;
+
+    std::vector<Trade> rebalance(
+        std::size_t row,
+        Portfolio& portfolio,
+        const PriceTable& prices,
+        const std::vector<double>& target_weights,
+        double transaction_cost_rate
+    ) const override;
+
+private:
+    std::size_t lookback_days_;
+};
+```
+
+### Optimized Strategy Source: `src/portfolio_optimizer/OptimizedMonthlyRebalanceStrategy.cpp`
+
+Implements monthly inverse-volatility rebalancing through the same strategy interface as the baseline strategies.
+
+```cpp
+#include "portfolio_optimizer/OptimizedMonthlyRebalanceStrategy.hpp"
+
+#include <vector>
+
+OptimizedMonthlyRebalanceStrategy::OptimizedMonthlyRebalanceStrategy(
+    std::size_t lookback_days
+)
+    : lookback_days_(lookback_days) {}
+
+std::string OptimizedMonthlyRebalanceStrategy::name() const {
+    return "Optimized Monthly Rebalance";
+}
+
+std::vector<Trade> OptimizedMonthlyRebalanceStrategy::rebalance(
+    std::size_t row,
+    Portfolio& portfolio,
+    const PriceTable& prices,
+    const std::vector<double>& target_weights,
+    double transaction_cost_rate
+) const {
+    (void)target_weights;
+
+    if (row == 0) {
+        return {};
+    }
+
+    const std::string& today = prices.date(row);
+    const std::string& yesterday = prices.date(row - 1);
+
+    const std::string today_month = today.substr(0, 7);
+    const std::string yesterday_month = yesterday.substr(0, 7);
+
+    const bool is_first_day = row == lookback_days_;
+    const bool is_new_month = today_month != yesterday_month;
+
+    if (row < lookback_days_) {
+        return {};
+    }
+
+    if (!is_first_day && !is_new_month) {
+        return {};
+    }
+
+    std::vector<double> optimized_weights =
+        OptimizationEngine::inverse_volatility_weights(
+            prices,
+            row,
+            lookback_days_
+        );
+
+    return portfolio.rebalance(
+        today,
+        name(),
+        prices.assets(),
+        prices.prices(row),
+        optimized_weights,
+        transaction_cost_rate
+    );
+}
+```
+
 ### Risk Metrics Header: `include/risk/RiskMetrics.hpp`
 
-Declares risk metric outputs and the `RiskMetrics` calculator.
+Declares risk metric outputs and the RiskMetrics calculator.
 
 ```cpp
 // This tells the compiler to include this header only once, avoiding duplicate definitions.
@@ -1319,7 +1727,7 @@ private:
 };
 ```
 
-### Risk Metrics Implementation: `src/risk/RiskMetrics.cpp`
+### Risk Metrics Source: `src/risk/RiskMetrics.cpp`
 
 Implements total return, annualized return, volatility, Sharpe ratio, max drawdown, VaR, CVaR, and rolling volatility.
 
@@ -1528,7 +1936,7 @@ private:
 };
 ```
 
-### Monte Carlo Implementation: `src/risk/MonteCarloSimulator.cpp`
+### Monte Carlo Source: `src/risk/MonteCarloSimulator.cpp`
 
 Implements normal-return Monte Carlo simulation of future terminal portfolio values.
 
@@ -1670,7 +2078,7 @@ private:
 };
 ```
 
-### Stress Test Implementation: `src/risk/StressTestEngine.cpp`
+### Stress Test Source: `src/risk/StressTestEngine.cpp`
 
 Implements default stress scenarios for SPY, TLT, GLD, and BTC-USD.
 
@@ -1791,7 +2199,7 @@ private:
 };
 ```
 
-### Report Printer Implementation: `src/risk/ReportPrinter.cpp`
+### Report Printer Source: `src/risk/ReportPrinter.cpp`
 
 Writes equity curves, trades, metrics, rolling volatility, Monte Carlo, and stress-test CSV outputs.
 
@@ -1966,9 +2374,9 @@ void ReportPrinter::print_all(
 }
 ```
 
-### Python Data Support: `main.py`
+### Python Data Downloader: `main.py`
 
-Downloads real market data with yfinance and writes `data/asset_prices.csv` for the C++ demo.
+Downloads real market data with yfinance and writes data/asset_prices.csv for the C++ demo.
 
 ```python
 """
