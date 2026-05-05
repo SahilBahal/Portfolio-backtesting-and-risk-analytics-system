@@ -90,6 +90,57 @@ void print_result(const BacktestResult& result, const std::vector<std::string>& 
 //
 // This function proves the integration point:
 // BacktestEngine produces BacktestResult, then the risk module consumes it.
+void print_risk_snapshot(
+    const RiskReport& risk_report,
+    const MonteCarloResult& monte_carlo_result
+) {
+    // Print only the most important risk numbers.
+    //
+    // The CSV files still contain the full detailed output.
+    // The terminal snapshot is meant to make the demo easier to present live.
+    std::cout << "  risk snapshot:\n";
+
+    // Total return measures the full backtest gain or loss.
+    // Example: 1.00 means +100%, so we multiply by 100 for display.
+    std::cout << "    total return: " << std::fixed << std::setprecision(2)
+              << risk_report.total_return * 100.0 << "%\n";
+
+    // Annualized return converts the full-period return into an approximate
+    // average return per year.
+    std::cout << "    annualized return: " << std::fixed << std::setprecision(2)
+              << risk_report.annualized_return * 100.0 << "%\n";
+
+    // Annualized volatility measures how much the daily returns move around,
+    // scaled to a yearly number using the standard 252 trading days assumption.
+    std::cout << "    annualized volatility: " << std::fixed << std::setprecision(2)
+              << risk_report.annualized_volatility * 100.0 << "%\n";
+
+    // Sharpe ratio is return per unit of risk.
+    // Higher is generally better, but it should be compared against drawdown
+    // and tail-risk metrics too.
+    std::cout << "    Sharpe ratio: " << std::fixed << std::setprecision(2)
+              << risk_report.sharpe_ratio << "\n";
+
+    // Maximum drawdown is the worst peak-to-trough loss during the backtest.
+    // It is one of the easiest risk numbers to explain in a presentation.
+    std::cout << "    max drawdown: " << std::fixed << std::setprecision(2)
+              << risk_report.max_drawdown * 100.0 << "%\n";
+
+    // VaR and CVaR summarize downside tail risk.
+    // VaR 95% is the daily loss threshold for the worst 5% of days.
+    // CVaR 95% is the average loss inside that worst 5% tail.
+    std::cout << "    daily VaR 95% / CVaR 95%: " << std::fixed << std::setprecision(2)
+              << risk_report.var_95 * 100.0 << "% / "
+              << risk_report.cvar_95 * 100.0 << "%\n";
+
+    // Monte Carlo percentiles show the simulated one-year distribution.
+    // p5 is the downside case, median is the middle case, and p95 is the upside case.
+    std::cout << "    Monte Carlo 1Y p5 / median / p95: $"
+              << std::fixed << std::setprecision(0) << monte_carlo_result.p5
+              << " / $" << monte_carlo_result.median
+              << " / $" << monte_carlo_result.p95 << "\n\n";
+}
+
 void write_risk_outputs(const BacktestResult& result, const std::string& output_dir) {
     // RiskMetrics reads the equity curve and daily returns from BacktestResult.
     RiskMetrics risk_metrics;
@@ -110,6 +161,11 @@ void write_risk_outputs(const BacktestResult& result, const std::string& output_
     StressTestEngine stress_test;
     stress_test.load_defaults(result.asset_names);
     const std::vector<StressResult> stress_results = stress_test.run(result);
+
+    // Print a compact risk summary to the terminal.
+    // This gives the presentation/demo the most important numbers immediately,
+    // without requiring the user to open the CSV files.
+    print_risk_snapshot(risk_report, monte_carlo_result);
 
     // ReportPrinter writes all outputs to a strategy-specific folder.
     ReportPrinter printer(output_dir);

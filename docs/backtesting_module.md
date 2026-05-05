@@ -25,7 +25,7 @@ This module provides the reusable C++ engine that steps through historical price
 | `src/backtesting/BacktestEngine.cpp` | Implements the day-by-day backtest loop. |
 | `src/portfolio_optimizer/*.cpp` | Implements inverse-volatility weights and the optimized monthly rebalance strategy. |
 | `src/risk/*.cpp` | Implements risk metrics, Monte Carlo simulation, stress testing, and CSV report writing. |
-| `src/main_demo.cpp` | Standalone demo that reads `data/asset_prices.csv` and runs buy-and-hold, fixed monthly rebalance, and optimized monthly rebalance. |
+| `src/main_demo.cpp` | Standalone demo that reads `data/asset_prices.csv`, runs buy-and-hold, fixed monthly rebalance, and optimized monthly rebalance, then prints key risk statistics. |
 
 ## How Other Team Members Plug In
 
