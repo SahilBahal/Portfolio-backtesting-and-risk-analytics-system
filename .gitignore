@@ -2,6 +2,7 @@
 .venv/
 build/
 output/
+figures/
 cmake-build-*/
 CMakeFiles/
 CMakeCache.txt
