@@ -1,5 +1,6 @@
 #include "portfolio_optimizer/OptimizationEngine.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <vector>
@@ -110,6 +111,87 @@ std::vector<double> OptimizationEngine::inverse_volatility_weights(
     return normalize_weights(raw_weights);
 }
 
+std::vector<double> OptimizationEngine::minimum_variance_weights(
+    const PriceTable& prices,
+    std::size_t end_row,
+    std::size_t lookback
+) {
+    auto covariance_matrix = compute_covariance_matrix(prices, end_row, lookback);
+    const std::size_t n = covariance_matrix.size();
+
+    if (n == 0) {
+        return {};
+    }
+
+    std::vector<double> ones(n, 1.0);
+    std::vector<double> raw_weights = solve_linear_system(covariance_matrix, ones);
+
+    for (double& weight : raw_weights) {
+        if (weight < 0.0) {
+            weight = 0.0;
+        }
+    }
+
+    return normalize_weights(raw_weights);
+}
+
+std::vector<double> OptimizationEngine::risk_parity_weights(
+    const PriceTable& prices,
+    std::size_t end_row,
+    std::size_t lookback,
+    std::size_t max_iterations,
+    double tolerance
+) {
+    auto covariance_matrix = compute_covariance_matrix(prices, end_row, lookback);
+    const std::size_t n = covariance_matrix.size();
+
+    if (n == 0) {
+        return {};
+    }
+
+    std::vector<double> weights(n, 1.0 / static_cast<double>(n));
+    std::vector<double> risk_contributions(n);
+
+    for (std::size_t iteration = 0; iteration < max_iterations; ++iteration) {
+        std::vector<double> marginal_risk = multiply_matrix_vector(covariance_matrix, weights);
+        double target_rc = 1.0 / static_cast<double>(n);
+
+        bool valid = true;
+        for (std::size_t i = 0; i < n; ++i) {
+            if (weights[i] <= 0.0 || marginal_risk[i] <= 0.0) {
+                valid = false;
+                break;
+            }
+            risk_contributions[i] = weights[i] * marginal_risk[i];
+        }
+
+        if (!valid) {
+            weights.assign(n, 1.0 / static_cast<double>(n));
+            continue;
+        }
+
+        double max_diff = 0.0;
+        for (std::size_t i = 0; i < n; ++i) {
+            double desired_ratio = target_rc / risk_contributions[i];
+            double alpha = std::sqrt(desired_ratio);
+            weights[i] *= alpha;
+        }
+
+        weights = normalize_weights(weights);
+
+        for (std::size_t i = 0; i < n; ++i) {
+            double current_rc = weights[i] * marginal_risk[i];
+            max_diff = std::max(max_diff, std::fabs(current_rc - target_rc));
+        }
+
+        if (max_diff < tolerance) {
+            break;
+        }
+    }
+
+    return normalize_weights(weights);
+}
+
 std::vector<std::vector<double>> OptimizationEngine::compute_covariance_matrix(
     const PriceTable& prices,
     std::size_t end_row,
@@ -203,4 +285,88 @@ std::vector<double> OptimizationEngine::normalize_weights(
     }
 
     return normalized;
+}
+
+std::vector<double> OptimizationEngine::multiply_matrix_vector(
+    const std::vector<std::vector<double>>& matrix,
+    const std::vector<double>& vector
+) {
+    const std::size_t n = matrix.size();
+    std::vector<double> result(n, 0.0);
+
+    for (std::size_t i = 0; i < n; ++i) {
+        if (matrix[i].size() != n) {
+            throw std::runtime_error("Covariance matrix is not square.");
+        }
+
+        for (std::size_t j = 0; j < n; ++j) {
+            result[i] += matrix[i][j] * vector[j];
+        }
+    }
+
+    return result;
+}
+
+std::vector<double> OptimizationEngine::solve_linear_system(
+    std::vector<std::vector<double>> matrix,
+    std::vector<double> rhs
+) {
+    const std::size_t n = matrix.size();
+
+    if (rhs.size() != n) {
+        throw std::runtime_error("RHS size does not match matrix dimension.");
+    }
+
+    for (std::size_t i = 0; i < n; ++i) {
+        if (matrix[i].size() != n) {
+            throw std::runtime_error("Covariance matrix is not square.");
+        }
+    }
+
+    for (std::size_t pivot = 0; pivot < n; ++pivot) {
+        std::size_t max_row = pivot;
+        double max_value = std::fabs(matrix[pivot][pivot]);
+
+        for (std::size_t row = pivot + 1; row < n; ++row) {
+            double value = std::fabs(matrix[row][pivot]);
+            if (value > max_value) {
+                max_value = value;
+                max_row = row;
+            }
+        }
+
+        if (max_value <= 0.0) {
+            return std::vector<double>(n, 1.0 / static_cast<double>(n));
+        }
+
+        if (max_row != pivot) {
+            std::swap(matrix[pivot], matrix[max_row]);
+            std::swap(rhs[pivot], rhs[max_row]);
+        }
+
+        double pivot_value = matrix[pivot][pivot];
+        for (std::size_t col = pivot; col < n; ++col) {
+            matrix[pivot][col] /= pivot_value;
+        }
+        rhs[pivot] /= pivot_value;
+
+        for (std::size_t row = pivot + 1; row < n; ++row) {
+            double factor = matrix[row][pivot];
+            for (std::size_t col = pivot; col < n; ++col) {
+                matrix[row][col] -= factor * matrix[pivot][col];
+            }
+            rhs[row] -= factor * rhs[pivot];
+        }
+    }
+
+    std::vector<double> solution(n, 0.0);
+    for (std::size_t i = n; i-- > 0;) {
+        double sum = rhs[i];
+        for (std::size_t j = i + 1; j < n; ++j) {
+            sum -= matrix[i][j] * solution[j];
+        }
+        solution[i] = sum;
+    }
+
+    return solution;
 }

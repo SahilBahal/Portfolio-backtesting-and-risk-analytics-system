@@ -39,6 +39,23 @@ public:
         std::size_t lookback
     );
 
+    // Computes long-only minimum-variance portfolio weights using the
+    // Markowitz global minimum variance formula.
+    static std::vector<double> minimum_variance_weights(
+        const PriceTable& prices,
+        std::size_t end_row,
+        std::size_t lookback
+    );
+
+    // Computes a long-only risk-parity portfolio.
+    static std::vector<double> risk_parity_weights(
+        const PriceTable& prices,
+        std::size_t end_row,
+        std::size_t lookback,
+        std::size_t max_iterations = 1000,
+        double tolerance = 1e-8
+    );
+
     // Computes portfolio variance:
     // w^T Sigma w
     static double portfolio_variance(
@@ -50,5 +67,15 @@ private:
     // Normalizes weights so they sum to 1.0.
     static std::vector<double> normalize_weights(
         const std::vector<double>& raw_weights
+    );
+
+    static std::vector<double> multiply_matrix_vector(
+        const std::vector<std::vector<double>>& matrix,
+        const std::vector<double>& vector
+    );
+
+    static std::vector<double> solve_linear_system(
+        std::vector<std::vector<double>> matrix,
+        std::vector<double> rhs
     );
 };

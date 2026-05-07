@@ -38,12 +38,16 @@ STRATEGY_FOLDERS = [
     "buy_and_hold",
     "fixed_monthly_rebalance",
     "optimized_monthly_rebalance",
+    "markowitz_monthly_rebalance",
+    "risk_parity_monthly_rebalance",
 ]
 
 DISPLAY_NAMES = {
     "buy_and_hold": "Buy & Hold",
     "fixed_monthly_rebalance": "Fixed Monthly",
     "optimized_monthly_rebalance": "Optimized Monthly",
+    "markowitz_monthly_rebalance": "Markowitz Minimum-Variance",
+    "risk_parity_monthly_rebalance": "Risk-Parity",
 }
 
 
@@ -118,7 +122,7 @@ def plot_key_metrics() -> None:
 
     metrics = pd.DataFrame(rows)
 
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    fig, axes = plt.subplots(2, 1, figsize=(10, 10), constrained_layout=True)
 
     percent_metrics = ["annualized_return", "annualized_volatility", "max_drawdown"]
     percent_data = metrics.copy()
@@ -155,7 +159,6 @@ def plot_key_metrics() -> None:
     axes[1].grid(True, axis="y", alpha=0.25)
 
     fig.suptitle("Key Strategy Metrics")
-    fig.tight_layout()
     fig.savefig(FIGURES_DIR / "key_metrics.png", dpi=160)
     plt.close(fig)
 

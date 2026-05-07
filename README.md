@@ -10,6 +10,8 @@ This branch contains the C++ setup for the portfolio backtesting and portfolio-a
 - `CsvReader` for loading generated price CSV files
 - `RebalanceStrategy` interface using inheritance and polymorphism
 - Portfolio optimizer integration with inverse-volatility monthly rebalancing
+- Markowitz minimum-variance monthly rebalance strategy
+- Risk-parity monthly rebalance strategy
 - Risk module integration for metrics, Monte Carlo simulation, stress tests, and CSV reporting
 - Buy-and-hold strategy
 - Fixed monthly rebalance strategy
@@ -26,6 +28,8 @@ cmake -S . -B build
 cmake --build build
 ./build/backtesting_demo
 ```
+
+This demo now runs five strategies: buy-and-hold, fixed monthly rebalance, inverse-volatility optimized monthly rebalance, Markowitz minimum-variance monthly rebalance, and risk-parity monthly rebalance.
 
 ## Generate Price Data
 

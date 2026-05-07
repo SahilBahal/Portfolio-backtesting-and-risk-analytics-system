@@ -243,6 +243,8 @@ int main() {
     BuyAndHoldStrategy buy_and_hold;
     FixedWeightMonthlyRebalanceStrategy monthly_rebalance;
     OptimizedMonthlyRebalanceStrategy optimized_rebalance;
+    MarkowitzMonthlyRebalanceStrategy markowitz_rebalance;
+    RiskParityMonthlyRebalanceStrategy risk_parity_rebalance;
 
     // Run strategy 1: buy-and-hold.
     //
@@ -269,6 +271,16 @@ int main() {
     const BacktestResult optimized_rebalance_result = engine.run(optimized_rebalance);
     print_result(optimized_rebalance_result, prices.assets());
     write_risk_outputs(optimized_rebalance_result, "output/optimized_monthly_rebalance");
+
+    // Run strategy 4: Markowitz minimum-variance monthly rebalance.
+    const BacktestResult markowitz_rebalance_result = engine.run(markowitz_rebalance);
+    print_result(markowitz_rebalance_result, prices.assets());
+    write_risk_outputs(markowitz_rebalance_result, "output/markowitz_monthly_rebalance");
+
+    // Run strategy 5: risk-parity monthly rebalance.
+    const BacktestResult risk_parity_rebalance_result = engine.run(risk_parity_rebalance);
+    print_result(risk_parity_rebalance_result, prices.assets());
+    write_risk_outputs(risk_parity_rebalance_result, "output/risk_parity_monthly_rebalance");
 
     // Returning 0 tells the operating system the program finished successfully.
     return 0;
