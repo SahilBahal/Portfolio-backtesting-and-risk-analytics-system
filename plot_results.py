@@ -45,7 +45,7 @@ STRATEGY_FOLDERS = [
 DISPLAY_NAMES = {
     "buy_and_hold": "Buy & Hold",
     "fixed_monthly_rebalance": "Fixed Monthly",
-    "optimized_monthly_rebalance": "Optimized Monthly",
+    "optimized_monthly_rebalance": "Inverse Vol. Monthly",
     "markowitz_monthly_rebalance": "Markowitz Minimum-Variance",
     "risk_parity_monthly_rebalance": "Risk-Parity",
 }

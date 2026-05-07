@@ -8,7 +8,7 @@ OptimizedMonthlyRebalanceStrategy::OptimizedMonthlyRebalanceStrategy(
     : lookback_days_(lookback_days) {}
 
 std::string OptimizedMonthlyRebalanceStrategy::name() const {
-    return "Optimized Monthly Rebalance";
+    return "Inverse Vol. Monthly";
 }
 
 std::vector<Trade> OptimizedMonthlyRebalanceStrategy::rebalance(
