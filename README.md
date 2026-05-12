@@ -1,4 +1,4 @@
-# FE522 Project - Backtesting Module
+# Backtesting Module
 
 This branch contains the C++ setup for the portfolio backtesting and portfolio-accounting layer.
 
